@@ -1,0 +1,10 @@
+{
+  "lang": "en",
+  "ai_count": 5,
+  "biz_count": 5,
+  "translate": {
+    "deepl_api_key": "",
+    "google_api_key": "",
+    "also_try_free": true
+  }
+}

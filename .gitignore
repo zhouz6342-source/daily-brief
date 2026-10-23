@@ -1,0 +1,25 @@
+# generated output
+index.html
+archive/
+data/
+
+# personal settings and API keys -- never commit these
+config.json
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# credentials and one-off helper files -- never commit
+gh_token*
+*token*.txt
+gh_state.txt
+gh_device_login.py
+*.log
