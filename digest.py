@@ -30,7 +30,25 @@ import zlib
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
-HOME = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def _resolve_home() -> str:
+    """Where generated output and user settings live.
+
+    Running from a checkout, that is the checkout itself. Installed from PyPI,
+    the module sits inside site-packages -- writing data/ and index.html there
+    would be wrong (and often read-only), so fall back to a per-user directory.
+    """
+    env = os.environ.get("DAILY_BRIEF_HOME")
+    if env:
+        return os.path.abspath(os.path.expanduser(env))
+    if "site-packages" in HERE or "dist-packages" in HERE:
+        return os.path.join(os.path.expanduser("~"), ".daily-brief")
+    return HERE
+
+
+HOME = _resolve_home()
 DATA = os.path.join(HOME, "data")
 ARCHIVE = os.path.join(HOME, "archive")
 INDEX = os.path.join(HOME, "index.html")
@@ -38,6 +56,24 @@ STATE = os.path.join(HOME, "data", "last_good.json")
 LOCK = os.path.join(HOME, "data", ".lock")
 LOCALES = os.path.join(HOME, "locales")
 CONFIG_PATH = os.path.join(HOME, "config.json")
+
+
+def _locale_dirs() -> list:
+    """Every place a locale file may live, in priority order.
+
+    Covers a checkout, a `pip install` (data-files land under share/) and a
+    venv where sys.prefix differs from sys.exec_prefix.
+    """
+    seen, out = set(), []
+    for path in (os.path.join(HOME, "locales"),
+                 os.path.join(HERE, "locales"),
+                 os.path.join(sys.prefix, "share", "daily-brief", "locales"),
+                 os.path.join(sys.exec_prefix, "share", "daily-brief", "locales")):
+        if path not in seen:
+            seen.add(path)
+            out.append(path)
+    return out
+
 
 QUIET = "--quiet" in sys.argv
 FORCE = "--force" in sys.argv
@@ -120,15 +156,20 @@ _FALLBACK_STRINGS = {
 def load_strings(lang: str) -> dict:
     data = dict(_FALLBACK_STRINGS)
     for candidate in (lang, "en"):
-        path = os.path.join(LOCALES, candidate + ".json")
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                loaded = json.load(f)
-            if isinstance(loaded, dict):
-                data.update({k: v for k, v in loaded.items() if v not in (None, "", [], {})})
-                break
-        except Exception:
-            continue
+        loaded = None
+        for folder in _locale_dirs():
+            path = os.path.join(folder, candidate + ".json")
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    value = json.load(f)
+                if isinstance(value, dict):
+                    loaded = value
+                    break
+            except Exception:
+                continue
+        if loaded:
+            data.update({k: v for k, v in loaded.items() if v not in (None, "", [], {})})
+            break
     return data
 
 

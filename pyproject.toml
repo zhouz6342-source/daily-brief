@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "daily-brief"
+version = "1.0.0"
+description = "Daily digest of AI frontier news and business knowledge, rendered as one self-contained HTML page"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "zhouz6342-source" }]
+keywords = [
+  "ai",
+  "news",
+  "rss",
+  "digest",
+  "daily-brief",
+  "news-aggregator",
+  "feed-reader",
+  "desktop",
+  "translation",
+  "bilingual",
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+  "Topic :: Office/Business :: News/Diary",
+  "Topic :: Text Processing :: Markup :: HTML",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["build>=1.0", "twine>=4.0"]
+
+[project.scripts]
+daily-brief = "digest:main"
+
+[project.urls]
+Homepage = "https://github.com/zhouz6342-source/daily-brief"
+Repository = "https://github.com/zhouz6342-source/daily-brief"
+Issues = "https://github.com/zhouz6342-source/daily-brief/issues"
+Changelog = "https://github.com/zhouz6342-source/daily-brief/releases"
+
+[tool.setuptools]
+# single-module project on purpose: it keeps the install trivial and lets the
+# checked-out script and the installed console command share one code path
+py-modules = ["digest"]
+
+[tool.setuptools.data-files]
+"share/daily-brief/locales" = [
+  "locales/en.json",
+  "locales/zh-CN.json",
+]

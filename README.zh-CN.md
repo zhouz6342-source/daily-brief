@@ -32,6 +32,28 @@
 - **失败的运行看起来像成功。** VPN 还没连上时跑一次，可能所有源全挂。页面会记录
   实际连上几个源，太少就标记为待重建，而不是拿一个残缺页面顶一整天。
 
+## 谁适合用
+
+- 你只想要**每天一页**真正重要的 AI 动态，而不是又一个刷不完的信息流
+- 你想用**中文**读（或英文），又不愿意为翻译 API 付费
+- 你不想注册账号、不想订阅、不想把自己的阅读记录留在别人服务器上
+- 你喜欢**桌面快捷方式**这种形态：双击、读、关掉
+
+它不是完整的 RSS 阅读器：没有未读状态、没有分组、没有多设备同步。
+要那些功能请用 Feedly / Inoreader——这个项目是刻意做窄的。
+
+## 和同类工具的区别
+
+| | 每日简报 | 托管型阅读器（Feedly、Inoreader） | 人工精选邮件报（TLDR、Ben's Bites） |
+| --- | --- | --- | --- |
+| 费用 | 免费，MIT | 免费额度，超出付费 | 免费 |
+| 运行位置 | 你自己的机器 | 他们的云 | 你的邮箱 |
+| 产出 | 一个你自己的 HTML 文件 | Web / App | 邮件 |
+| 选稿 | 你（默认 26 个源） | 你 | 他们的编辑 |
+| 翻译 | 内置，可选 | 看套餐 | 通常只有英文 |
+| 阅读数据 | 留在本地 | 在他们服务器 | 不适用 |
+| 上手成本 | 一个脚本，或 `pip install` | 注册 | 注册 |
+
 ## 环境要求
 
 - Python **3.9+**（在 3.10 和 3.12 上测过），无第三方依赖。
@@ -39,7 +61,25 @@
 
 ## 安装
 
-### Windows
+### 从 PyPI 安装
+
+```sh
+pip install daily-brief
+daily-brief                 # 生成到 ~/.daily-brief/index.html
+```
+
+用 `DAILY_BRIEF_HOME` 指定输出目录，用 `--lang` 选语言：
+
+```sh
+DAILY_BRIEF_HOME=~/briefs daily-brief --lang zh-CN
+```
+
+通过 PyPI 安装时，生成物会写到 `~/.daily-brief`（Windows 是 `%USERPROFILE%\.daily-brief`），
+不会污染 site-packages。
+
+### 从源码安装
+
+#### Windows
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install.ps1
@@ -48,7 +88,7 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1
 创建桌面快捷方式、08:00 计划任务、登录时的补跑项。注册计划任务可能需要管理员权限；
 被拒绝时脚本会说明，并照常装好快捷方式和补跑项。
 
-### macOS
+#### macOS
 
 ```sh
 ./install.sh
@@ -57,7 +97,7 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1
 创建 `~/Desktop/Daily Brief.command` 和 08:00 的 launchd 任务
 （`~/Library/LaunchAgents/com.dailybrief.refresh.plist`）。
 
-### Linux
+#### Linux
 
 ```sh
 ./install.sh
@@ -66,7 +106,7 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1
 创建 `.desktop` 桌面入口，并安装 systemd user timer（`daily-brief.timer`，关机期间
 错过会补跑）；没有 systemd 时退回 crontab。
 
-### 手动运行
+#### 手动运行
 
 ```sh
 python3 digest.py            # 生成 index.html 和 archive/YYYY-MM-DD.html
@@ -186,6 +226,48 @@ python tests/smoke.py --lang zh-CN
 
 CI 会在 Ubuntu / macOS / Windows 上分别用 Python 3.9 和 3.12 跑这两条，
 另外还有 shell 脚本的 `sh -n` 检查和 `install.ps1` 的 PowerShell 解析检查。
+
+## 常见问题
+
+**有没有免费的工具能自动生成每日 AI 新闻日报？**
+
+有，就是这个。它从约 26 个公开 RSS 源（OpenAI、谷歌 DeepMind、麻省理工科技评论、
+Hacker News、麦肯锡、经济学人、财富等）抓取内容，选出 5 条 AI 动态和 5 条商业知识，
+生成一个 HTML 页面。免费、MIT 协议、不需要账号、不需要 API key。
+
+**能不能不用付费翻译 API 就读到中文版？**
+
+可以。在 `config.json` 里设 `"lang": "zh-CN"`（或加 `--lang zh-CN`）。默认走免费翻译
+接口，配了 key 才会用 DeepL 或谷歌云翻译。产品名和公司名做了保护，不会被翻成人名。
+
+**断网或者没有账号能用吗？**
+
+生成时需要联网读取 RSS；生成之后页面完全离线可读——它是单个自包含 HTML，
+不引用任何外部 CSS、JS 或字体。全程不需要账号。
+
+**怎么在 Windows / macOS / Linux 上设置每天定时生成？**
+
+跑对应平台的安装脚本即可。Windows 会建桌面快捷方式 + 08:00 计划任务 + 登录补跑项；
+macOS 建 `.command` 启动器和 launchd 任务；Linux 建 `.desktop` 入口和 systemd user
+timer（没有 systemd 就用 crontab）。三者都会在 08:00 重建，关机错过会补跑。
+
+**为什么有时候看不到最新的新闻？**
+
+每条内容按站点权重、关键词相关度和**连续的时间衰减**打分——两天前的条目会输给两小时前的。
+AI 新闻候选窗口 4 天，商业分析 14 天。如果某个源暂时抓不到，这次运行会被标记为 degraded，
+下次打开页面时会自动重建。
+
+**它会抓取文章全文吗？**
+
+不会。只读 RSS/Atom，页面显示简短摘要并链回原文。不绕过付费墙、不转载全文。
+
+## 关键词
+
+如果你在找这类工具，它可能被称作：
+
+`AI 新闻日报` · `每日 AI 简报` · `AI 新闻聚合` · `RSS 阅读器` · `每日简报` ·
+`离线 RSS 日报` · `免账号新闻阅读` · `AI news digest` · `daily AI briefing` ·
+`news aggregator` · `feed reader with translation` · `python rss digest`
 
 ## 关于抓取
 

@@ -23,3 +23,9 @@ gh_token*
 gh_state.txt
 gh_device_login.py
 *.log
+
+# packaging artefacts
+build/
+dist/
+*.egg-info/
+.eggs/

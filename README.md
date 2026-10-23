@@ -32,12 +32,52 @@ Most "news digest" scripts break in the same three ways. This one handles them:
 - **The network lies.** A blocked host does not refuse the connection, it swallows it, so `urlopen(timeout=…)` can hang forever. Every request runs on a worker thread with a hard wall-clock deadline.
 - **A wasted run looks like success.** A run that happens while your VPN is still connecting can finish with every source failing. The page records how many sources it actually reached, and a low count marks it for rebuild rather than letting it serve for a whole day.
 
+## Who this is for
+
+- You want **one page a day** with the AI stories that matter, not another infinite feed.
+- You'd rather read it in **Chinese** (or English) without paying for a translation API.
+- You don't want an account, a subscription, or your reading history on someone else's server.
+- You like the idea of a **desktop shortcut**: double-click, read, close.
+
+It is not a full RSS reader. There is no unread state, no folders, no sync between devices.
+If you want that, use Feedly or Inoreader — this is deliberately narrower.
+
+## How it differs from the alternatives
+
+| | Daily Brief | Hosted reader (Feedly, Inoreader) | Curated newsletter (TLDR, Ben's Bites) |
+| --- | --- | --- | --- |
+| Cost | free, MIT | free tier, then paid | free |
+| Runs on | your machine | their cloud | their inbox |
+| Output | one HTML file you own | web app / mobile app | email |
+| Who picks the stories | you (26 feeds by default) | you | their editors |
+| Translation | built in, optional | varies by plan | usually English only |
+| Your reading data | stays local | on their servers | n/a |
+| Setup | one script, or `pip install` | sign up | sign up |
+
 ## Requirements
 
 - Python **3.9+** (tested on 3.10 and 3.12). No third-party packages.
 - Any OS for the generator. The installers cover Windows, macOS and Linux.
 
 ## Install
+
+### From PyPI
+
+```sh
+pip install daily-brief
+daily-brief                 # writes index.html to ~/.daily-brief
+```
+
+Set `DAILY_BRIEF_HOME` to write somewhere else, and `--lang` to pick a language:
+
+```sh
+DAILY_BRIEF_HOME=~/briefs daily-brief --lang zh-CN
+```
+
+PyPI installs put generated files in `~/.daily-brief` (or `%USERPROFILE%\.daily-brief`)
+rather than inside site-packages.
+
+### From a checkout
 
 Clone or download, then run the installer for your platform.
 
@@ -196,6 +236,55 @@ python tests/smoke.py --lang zh-CN
 
 CI runs those on Ubuntu, macOS and Windows across Python 3.9 and 3.12, plus
 `sh -n` on the shell scripts and a PowerShell parse check on `install.ps1`.
+
+## FAQ
+
+**Is there a free tool that builds a daily AI news digest?**
+
+Yes — this one. It fetches ~26 public RSS feeds (OpenAI, Google DeepMind, MIT Tech
+Review, Hacker News, McKinsey, The Economist, Fortune and others), picks the top 5 AI
+stories and 5 business pieces, and writes a single HTML page. Free, MIT licensed, no
+account, no API key required.
+
+**Can I get the digest in Chinese without paying for a translation API?**
+
+Yes. Set `"lang": "zh-CN"` in `config.json` (or pass `--lang zh-CN`). Translation uses
+free endpoints by default, with optional DeepL or Google Cloud Translation if you add a
+key. Product and company names are protected from translation, so "Claude Duet" stays
+"Claude Duet" instead of being turned into a person's name.
+
+**Does it work without an internet connection or an account?**
+
+Generation needs a network connection to read the feeds. In normal use the page is built
+once a day and then read offline — it is a single self-contained HTML file with no
+external CSS, JS or fonts. No account is needed at any point.
+
+**How do I schedule a daily digest on Windows, macOS or Linux?**
+
+Run the installer for your platform. Windows gets a shortcut plus a Task Scheduler entry
+at 08:00 with a logon catch-up; macOS gets a `.command` launcher plus a launchd agent;
+Linux gets a `.desktop` entry plus a systemd user timer (or cron). All of them rebuild at
+08:00 and catch up if the machine was off.
+
+**Why are the newest stories sometimes missing?**
+
+Each item is scored by source weight, keyword relevance and age, with the age penalty
+growing continuously — so a 2-day-old item loses to a 2-hour-old one. AI news uses a
+4-day candidate window, business analysis 14 days. If a source is unreachable, the run
+is marked degraded and the page rebuilds automatically on the next open.
+
+**Does it scrape article text?**
+
+No. It reads RSS/Atom feeds only, shows a short excerpt, and links to the original
+article. No paywall bypassing, no full-text redistribution.
+
+## Keywords
+
+If you are searching for this kind of tool, these are the terms it answers to:
+
+`AI news digest` · `daily AI briefing` · `RSS 阅读器` · `每日简报` · `AI 新闻聚合` ·
+`每日 AI 日报` · `news aggregator` · `feed reader with translation` · `self-hosted news
+digest` · `离线 RSS 日报` · `no-account news reader` · `python rss digest`
 
 ## Notes on sources
 
